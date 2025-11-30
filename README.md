@@ -2,6 +2,8 @@
 
 A web-based tool for creating animated GIFs from sprite sheets. Upload your sprite sheet, select frames, adjust animation speed, and export as a GIF.
 
+![Sprite GIF Generator UI](image_examples/sprite_gif_generator.png)
+
 ## Features
 
 - Upload and automatically slice sprite sheets into individual frames
@@ -49,3 +51,9 @@ npm run build
 - Tailwind CSS
 - gifshot (GIF generation)
 - Lucide React (icons)
+
+## Creating a Sprite With Nano Banana Pro
+
+You can give as input this (or any other) 4x4.png for Nano Banana Pro to position the pixel art sprite images. You can try to get a transparent background, but I had to edit mine and fix a few things in an image editor.
+
+![4x4 Grid for Nano Banana Pro](image_examples/4x4_grid.png)
