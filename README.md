@@ -34,6 +34,18 @@ npm run dev
 npm run build
 ```
 
+### Deployment
+
+The project is deployed to GitHub Pages and available at: **https://arnicas.github.io/sprite-animator/**
+
+To deploy updates:
+
+```bash
+npm run deploy
+```
+
+This command builds the project and publishes it to the `gh-pages` branch automatically.
+
 ## Usage
 
 1. Upload a sprite sheet image (JPG or PNG)
