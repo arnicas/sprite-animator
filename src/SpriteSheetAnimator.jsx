@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Upload, Play, Pause, Download, Trash2, Settings, Grid, Image as ImageIcon, Check, ArrowLeft, AlertCircle } from 'lucide-react';
-import gifshot from 'gifshot';
+import { GIFEncoder, quantize, applyPalette } from 'gifenc';
 
 // --- Main Component ---
 export default function SpriteSheetAnimator() {
-  const gifshotStatus = 'ready'; // gifshot is now imported directly
+  const gifshotStatus = 'ready'; // Library is now imported directly
 
   // State
   const [imageSrc, setImageSrc] = useState(null);
@@ -51,7 +51,7 @@ export default function SpriteSheetAnimator() {
     // FORCE INTEGERS: Floating point dimensions crash GIF generators
     const frameW = Math.floor(img.width / c);
     const frameH = Math.floor(img.height / r);
-    
+
     setFrameDimensions({ width: frameW, height: frameH });
 
     const newFrames = [];
@@ -60,8 +60,11 @@ export default function SpriteSheetAnimator() {
         const canvas = document.createElement('canvas');
         canvas.width = frameW;
         canvas.height = frameH;
-        const ctx = canvas.getContext('2d');
-        
+        const ctx = canvas.getContext('2d', { alpha: true });
+
+        // Clear canvas to transparent
+        ctx.clearRect(0, 0, frameW, frameH);
+
         // Draw slice
         ctx.drawImage(
           img,
@@ -132,7 +135,7 @@ export default function SpriteSheetAnimator() {
     setIsPlaying(true);
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (selectedIndices.length === 0) return;
 
     setErrorMsg(null);
@@ -140,32 +143,86 @@ export default function SpriteSheetAnimator() {
     setExportUrl(null);
     setShowResult(false);
 
-    const imagesToExport = selectedIndices.map(i => frames[i]);
+    try {
+      // Ensure dimensions are valid integers
+      const gifW = Math.max(1, Math.floor(frameDimensions.width));
+      const gifH = Math.max(1, Math.floor(frameDimensions.height));
 
-    // Ensure dimensions are valid integers
-    const gifW = Math.max(1, Math.floor(frameDimensions.width));
-    const gifH = Math.max(1, Math.floor(frameDimensions.height));
+      console.log('Starting GIF export...', { gifW, gifH, numFrames: selectedIndices.length });
 
-    gifshot.createGIF({
-      images: imagesToExport,
-      gifWidth: gifW,
-      gifHeight: gifH,
-      interval: 1 / fps,
-      numFrames: imagesToExport.length,
-      frameDuration: 1,
-      sampleInterval: 10, // Relaxed from 1 to 10 for better compatibility
-      numWorkers: 2,
-    }, (obj) => {
-      if (!obj.error) {
-        setExportUrl(obj.image);
-        setIsPlaying(false); // Stop loop
-        setShowResult(true); // Switch to result view
-      } else {
-        console.error("GIF Export Error:", obj.errorMsg);
-        setErrorMsg(`Error generating GIF: ${obj.errorMsg || 'Unknown error'}`);
+      // Create GIF encoder
+      const gif = GIFEncoder();
+
+      // Load all frames as ImageData
+      const frameDataArray = [];
+      for (const frameIdx of selectedIndices) {
+        const img = new Image();
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = frames[frameIdx];
+        });
+
+        // Draw image to canvas to get ImageData
+        const canvas = document.createElement('canvas');
+        canvas.width = gifW;
+        canvas.height = gifH;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+        // Clear to transparent
+        ctx.clearRect(0, 0, gifW, gifH);
+        ctx.drawImage(img, 0, 0, gifW, gifH);
+
+        const imageData = ctx.getImageData(0, 0, gifW, gifH);
+        frameDataArray.push(imageData);
       }
+
+      console.log(`Loaded ${frameDataArray.length} frames, creating palette...`);
+
+      // Combine all frame data into a single Uint8Array for palette generation
+      const format = 'rgba4444'; // Use format that supports transparency
+      const totalPixels = frameDataArray.reduce((sum, f) => sum + f.data.length, 0);
+      const allPixels = new Uint8Array(totalPixels);
+      let offset = 0;
+      for (const frameData of frameDataArray) {
+        allPixels.set(frameData.data, offset);
+        offset += frameData.data.length;
+      }
+
+      const palette = quantize(allPixels, 256, { format });
+
+      console.log('Palette created, encoding frames...');
+
+      // Add each frame to the GIF
+      for (const imageData of frameDataArray) {
+        const index = applyPalette(imageData.data, palette, format);
+        gif.writeFrame(index, gifW, gifH, {
+          palette,
+          delay: Math.round(1000 / fps), // delay in milliseconds
+          transparent: true,
+          transparentIndex: 0, // Index 0 will be transparent
+        });
+      }
+
+      gif.finish();
+      const buffer = gif.bytes();
+
+      console.log('GIF encoded successfully!', buffer.length, 'bytes');
+
+      // Create blob and URL
+      const blob = new Blob([buffer], { type: 'image/gif' });
+      const url = URL.createObjectURL(blob);
+
+      setExportUrl(url);
+      setIsPlaying(false);
+      setShowResult(true);
       setIsExporting(false);
-    });
+
+    } catch (error) {
+      console.error("GIF Export Error:", error);
+      setErrorMsg(`Error generating GIF: ${error.message || 'Unknown error'}`);
+      setIsExporting(false);
+    }
   };
 
   const triggerDownload = () => {

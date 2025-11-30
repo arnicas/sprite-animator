@@ -10,6 +10,8 @@
     "deploy": "vite build && gh-pages -d dist"
   },
   "dependencies": {
+    "gif.js": "^0.2.0",
+    "gifenc": "^1.0.3",
     "gifshot": "^0.4.5",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
