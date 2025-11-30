@@ -221,7 +221,12 @@ export default function SpriteSheetAnimator() {
           <div className="bg-indigo-600 p-2 rounded-lg">
             <Grid className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-xl font-bold text-slate-800 hidden sm:block">Sprite Animator</h1>
+          <div className="hidden sm:block">
+            <h1 className="text-xl font-bold text-slate-800">Sprite Animator</h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Built by <a href="https://ghostweather.com/blog/posts/" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-700 underline">arnicas</a> and Gemini Pro 3 and Claude. <a href="https://github.com/arnicas/sprite-animator/tree/main" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-700 underline">Repo Link</a>.
+            </p>
+          </div>
         </div>
         
         <div className="flex items-center gap-4">
