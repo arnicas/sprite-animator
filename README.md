@@ -4,6 +4,8 @@ A web-based tool for creating animated GIFs from sprite sheets. Upload your spri
 
 ![Sprite GIF Generator UI](image_examples/sprite_gif_generator.png)
 
+![Example sprite animation](image_examples/sprite-animation.gif)
+
 ## Features
 
 - Upload and automatically slice sprite sheets into individual frames
